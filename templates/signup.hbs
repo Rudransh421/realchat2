@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>signup</title>
+</head>
+
+<body>
+    <h1>Signin</h1>
+    <form action="/signup" method="post" onsubmit="return check()">
+        <input type="text" name="name" placeholder="name" required>
+        <input type="text" name="email" placeholder="email" required>
+        <input type="text" name="phoneno" placeholder="phone No" required>
+        <input type="password" name="password" id="psw" placeholder="password" required>
+        <input type="password" name="confirm" id="cpsw" placeholder="confirm Password" required>
+        <input type="submit" value="verify">
+    </form>
+    <script type="text/javascript">
+
+
+        function check() {
+            var pas = document.getElementById("psw").value;
+            var pasr = document.getElementById("cpsw").value;
+
+            if (pas !== pasr) {
+                alert("Passwords do not match.");
+                return false;
+            } else if (pasr.value.length === 0) {
+                alert("Please enter confirm password.");
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+    </script>
+
+    <a href="/login">Login</a>
+
+</body>
+
+</html>
