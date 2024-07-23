@@ -5,10 +5,9 @@ const { generateOTP, sendOTP, connectToDB } = require("../controler/verify");
 const User = require("../controler/signadb");
 const bcrypt = require("bcryptjs");
 
-
-router.get('/',(req,res)=>{
-  res.render('wellcome') 
-})
+router.get("/", (req, res) => {
+  res.render("wellcome");
+});
 
 router.get("/signup", (req, res) => {
   res.render("signup");
@@ -18,26 +17,24 @@ router.get("/login", (req, res) => {
   res.render("login");
 });
 
-
-router.post('/login', (req, res, next) => {
-
+router.post("/login", (req, res, next) => {
   console.log(req.body.email); // Log email
   console.log(req.body.password); // Log password
 
-  passport.authenticate('local', async (err, user, info) => {
+  passport.authenticate("local", async (err, user, info) => {
     if (err) {
       return next(err);
     }
     if (!user) {
-      console.log('!user');
+      console.log("!user");
       console.log(info.message);
-      return res.redirect('/login');
+      return res.redirect("/login");
     }
     req.logIn(user, async (err) => {
       if (err) {
         return next(err);
       }
-      
+
       try {
         const otp = generateOTP();
         const timestamp = Date.now();
@@ -46,26 +43,25 @@ router.post('/login', (req, res, next) => {
         await collection.insertOne({ email: user.email, otp, timestamp });
         await sendOTP(user.email, otp);
 
-        console.log({ message: 'OTP sent successfully' });
-        res.redirect('/verifyotp');
+        console.log({ message: "OTP sent successfully" });
+        res.redirect("/verifyotp");
       } catch (err) {
         console.error(err);
-        res.send('Error processing request.');
+        res.send("Error processing request.");
       }
-      
     });
   })(req, res, next);
 });
 
-router.get('/verifyotp', async(req,res)=>{
-  res.render('verifyotp');
-})
+router.get("/verifyotp", async (req, res) => {
+  res.render("verifyotp");
+});
 
 router.post("/verifyotp", async (req, res) => {
   try {
     const { email, otp } = req.body;
     const collection = await connectToDB();
-    const storedOTP = await collection.findOne({ email });
+    const storedOTP = await collection.findOne({ email: email });
 
     if (!storedOTP) {
       return res.json({
@@ -74,9 +70,10 @@ router.post("/verifyotp", async (req, res) => {
       });
     }
 
-    const isOtpValid =
-      storedOTP.otp === otp &&
-      Date.now() - storedOTP.timestamp <= 24 * 60 * 60 * 1000;
+    console.log(storedOTP.otp, otp)
+
+    let isOtpValid =
+      storedOTP.otp == otp && Date.now() - storedOTP.timestamp <= 24 * 60 * 60 * 1000;
     if (isOtpValid) {
       await collection.deleteOne({ email });
       res.render("home");

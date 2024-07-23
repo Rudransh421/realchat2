@@ -11,14 +11,14 @@ function generateOTP() {
 
 async function sendOTP(email, otp) {
 
-    const transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        auth: {
-            user: 'mertie.beier@ethereal.email',
-            pass: 'aj3ZQ4U64grHQJt5TX'
-        }
-    });
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    auth: {
+        user: 'zoila86@ethereal.email',
+        pass: 'QkFVGaZmfKSgfu5s8R'
+    }
+});
 
  
   const mailOptions = {
@@ -54,3 +54,8 @@ module.exports ={
   sendOTP,
   connectToDB,
 }
+
+
+// Name	Nelson Kautzer
+// Username	nelson.kautzer31@ethereal.email – this account can not be used for inbound emails 
+// Password	rUBz6TxmpMqGd7KnQH
