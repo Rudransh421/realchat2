@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("../controler/passport");
-const { generateOTP, sendOTP, connectToDB } = require("../controler/verify");
+const { connectToDB ,verificationSent, verification } = require("../controler/verify");
 const User = require("../controler/signadb");
 const bcrypt = require("bcryptjs");
 
@@ -34,74 +34,100 @@ router.post("/login", (req, res, next) => {
       if (err) {
         return next(err);
       }
-
-      try {
-        const otp = generateOTP();
-        const timestamp = Date.now();
-        const collection = await connectToDB();
-
-        await collection.insertOne({ email: user.email, otp, timestamp });
-        await sendOTP(user.email, otp);
-
-        console.log({ message: "OTP sent successfully" });
-        res.redirect("/verifyotp");
-      } catch (err) {
-        console.error(err);
-        res.send("Error processing request.");
-      }
+      verificationSent(req, res, user, "login");
     });
   })(req, res, next);
 });
 
-router.get("/verifyotp", async (req, res) => {
-  res.render("verifyotp");
+router.get("/verifyotp-up", async (req, res) => {
+  res.render("verifyotp-up");
 });
 
-router.post("/verifyotp", async (req, res) => {
+router.get("/verifyotp-in", async (req, res) => {
+  res.render("verifyotp-in");
+});
+
+router.post("/verifyotp-up", async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    const collection = await connectToDB();
-    const storedOTP = await collection.findOne({ email: email });
+    const result = await verification(req, res);
 
-    if (!storedOTP) {
-      return res.json({
-        verified: false,
-        message: "OTP not found or expired.",
-      });
-    }
+    if (result.isOtpValid) {
+      const email = req.body.email; // Extract email from req.body
 
-    console.log(storedOTP.otp, otp)
+      // Connect to DB and delete OTP
+      const collection = await connectToDB();
+      await collection.deleteOne({ email: email });
 
-    let isOtpValid =
-      storedOTP.otp == otp && Date.now() - storedOTP.timestamp <= 24 * 60 * 60 * 1000;
-    if (isOtpValid) {
-      await collection.deleteOne({ email });
       res.render("home");
     } else {
-      res.json({ verified: false, message: "Invalid OTP or expired." });
+      // If OTP is invalid, delete the user
+      const email = req.body.email; // Extract email from req.body
+      await User.deleteOne({ email: email });
+
+      res.json({
+        verified: false,
+        message: "Invalid OTP.",
+      });
     }
   } catch (err) {
-    console.error(err);
-    res.json({ verified: false, message: "Error verifying OTP." });
+    res.json({
+      verified: false,
+      message: "Verification process failed.",
+    });
   }
 });
 
+
+router.post("/verifyotp-in", async (req, res) => {
+  try {
+    const result = await verification(req, res);
+
+    if (result.isOtpValid) {
+      const email = req.body.email; // Extract email from req.body
+
+      // Connect to DB and delete OTP
+      const collection = await connectToDB();
+      await collection.deleteOne({ email: email });
+
+      res.render("home");
+    } else {
+      res.json({
+        verified: false,
+        message: "Invalid OTP.",
+      });
+    }
+  } catch (err) {
+    res.json({
+      verified: false,
+      message: "Verification process failed.",
+    });
+  }
+});
+
+
 router.post("/signup", async (req, res) => {
+  let newUser;
   try {
     const { name, email, phoneno, password } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const newUser = new User({
+    newUser = new User({
       name,
       email,
       phoneno,
       password: hashedPassword,
     });
 
+    // Save the new user first
     await newUser.save();
-    res.redirect("/login");
+
+    // Send the OTP
+    await verificationSent(req, res, newUser, "signup");
   } catch (err) {
     console.error(err);
-    res.send("Error creating user.");
+    if (newUser) {
+      await User.deleteOne({ email: newUser.email });
+    }
+    res.status(500).send("Error creating user.");
   }
 });
 
