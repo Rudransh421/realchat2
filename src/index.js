@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("../controler/passport");
-const { connectToDB ,verificationSent, verification,verifyEmail } = require("../controler/verify");
+const {
+  connectToDB,
+  verificationSent,
+  verification,
+  verifyEmail,
+} = require("../controler/verify");
 const User = require("../controler/signadb");
 const bcrypt = require("bcryptjs");
 
@@ -77,7 +82,6 @@ router.get("/verifyotp-in", async (req, res) => {
 //   }
 // });
 
-
 router.post("/verifyotp-in", async (req, res) => {
   try {
     const result = await verification(req, res);
@@ -88,7 +92,6 @@ router.post("/verifyotp-in", async (req, res) => {
       const collection = await connectToDB();
       await collection.deleteOne({ email: email });
 
-
       return res.render("home");
     } else {
       return res.json({
@@ -97,7 +100,6 @@ router.post("/verifyotp-in", async (req, res) => {
       });
     }
   } catch (err) {
- 
     if (!res.headersSent) {
       return res.json({
         verified: false,
@@ -106,8 +108,6 @@ router.post("/verifyotp-in", async (req, res) => {
     }
   }
 });
-
-
 
 router.post("/signup", async (req, res) => {
   let newUser;
@@ -135,19 +135,18 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-router.get('/verifylink', async (req,res)=>{
-  res.render('verifylink')
-})
+router.get("/verifylink", async (req, res) => {
+  res.render("verifylink");
+});
 
-router.get('/verifyemail', async (req,res)=>{
-  try{
-    await verifyEmail(req,res)
+router.get("/verifyemail", async (req, res) => {
+  try {
+    await verifyEmail(req, res);
+  } catch (err) {
+    console.log(err);
+    console.log("error from index.js line 148");
   }
-  catch(err){
-    console.log(err)
-    console.log('error from index.js line 148')
-  }
-})
+});
 
 router.get("*", (req, res) => {
   res.send(`

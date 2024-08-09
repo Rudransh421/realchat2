@@ -2,7 +2,6 @@
 gamil : dummy26071999@gmail.com
 */
 
-
 const nodemailer = require("nodemailer");
 const randomstring = require("randomstring");
 const { MongoClient } = require("mongodb");
@@ -15,7 +14,7 @@ function generateOTP() {
   });
 }
 
-// for generating verification token 
+// for generating verification token
 
 function generateVerificationToken() {
   return randomstring.generate({
@@ -23,7 +22,6 @@ function generateVerificationToken() {
     charset: "alphanumeric",
   });
 }
-
 
 // Function to send OTP email
 async function sendOTP(email, otp) {
@@ -75,8 +73,8 @@ async function sendVerificationLink(email, link) {
     port: 465,
     secure: true,
     auth: {
-      user: "dummy26071999@gmail.com", 
-      pass: "gncpqmwxwdlepgkx", 
+      user: "dummy26071999@gmail.com",
+      pass: "gncpqmwxwdlepgkx",
     },
   });
 
@@ -95,7 +93,6 @@ async function sendVerificationLink(email, link) {
   }
 }
 
-
 // Function to handle sending OTP and links for verification
 async function verificationSent(req, res, user, type) {
   try {
@@ -104,9 +101,15 @@ async function verificationSent(req, res, user, type) {
 
     if (type === "signup") {
       const verificationToken = generateVerificationToken();
-      const verificationLink = `${req.protocol}://${req.get('host')}/verifyemail?token=${verificationToken}&email=${user.email}`;
-      
-      await collection.insertOne({ email: user.email, verificationToken, timestamp });
+      const verificationLink = `${req.protocol}://${req.get(
+        "host"
+      )}/verifyemail?token=${verificationToken}&email=${user.email}`;
+
+      await collection.insertOne({
+        email: user.email,
+        verificationToken,
+        timestamp,
+      });
       await sendVerificationLink(user.email, verificationLink);
 
       console.log("Verification link sent successfully");
@@ -145,7 +148,7 @@ async function verification(req, res) {
       storedOTP.otp === otp &&
       Date.now() - storedOTP.timestamp <= 24 * 60 * 60 * 1000;
 
-      return { isOtpValid };
+    return { isOtpValid };
   } catch (err) {
     console.error("Verification error:", err);
     return res.json({
@@ -176,13 +179,12 @@ async function verifyEmail(req, res) {
     });
 
     const isverified = await collection.findOne({ email: email });
-    if( isverified.verified == true){
-      await collection.deleteOne({email:email})
+    if (isverified.verified == true) {
+      await collection.deleteOne({ email: email });
+    } else {
+      console.log("Unable to delete from database");
     }
-    else{
-      console.log('Unable to delete from database')
-    }
-    return res.render('home')
+    return res.render("home");
   } catch (err) {
     console.error("Verification error:", err);
     return res.json({
@@ -191,7 +193,6 @@ async function verifyEmail(req, res) {
     });
   }
 }
-
 
 module.exports = {
   connectToDB,
