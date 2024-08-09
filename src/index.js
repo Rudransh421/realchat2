@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("../controler/passport");
-const { connectToDB ,verificationSent, verification } = require("../controler/verify");
+const { connectToDB ,verificationSent, verification,verifyEmail } = require("../controler/verify");
 const User = require("../controler/signadb");
 const bcrypt = require("bcryptjs");
 
@@ -47,35 +47,35 @@ router.get("/verifyotp-in", async (req, res) => {
   res.render("verifyotp-in");
 });
 
-router.post("/verifyotp-up", async (req, res) => {
-  try {
-    const result = await verification(req, res);
+// router.post("/verifyotp-up", async (req, res) => {
+//   try {
+//     const result = await verification(req, res);
 
-    if (result.isOtpValid) {
-      const email = req.body.email; // Extract email from req.body
+//     if (result.isOtpValid) {
+//       const email = req.body.email; // Extract email from req.body
 
-      // Connect to DB and delete OTP
-      const collection = await connectToDB();
-      await collection.deleteOne({ email: email });
+//       // Connect to DB and delete OTP
+//       const collection = await connectToDB();
+//       await collection.deleteOne({ email: email });
 
-      res.render("home");
-    } else {
-      // If OTP is invalid, delete the user
-      const email = req.body.email; // Extract email from req.body
-      await User.deleteOne({ email: email });
+//       res.render("home");
+//     } else {
+//       // If OTP is invalid, delete the user
+//       const email = req.body.email; // Extract email from req.body
+//       await User.deleteOne({ email: email });
 
-      res.json({
-        verified: false,
-        message: "Invalid OTP.",
-      });
-    }
-  } catch (err) {
-    res.json({
-      verified: false,
-      message: "Verification process failed.",
-    });
-  }
-});
+//       res.json({
+//         verified: false,
+//         message: "Invalid OTP.",
+//       });
+//     }
+//   } catch (err) {
+//     res.json({
+//       verified: false,
+//       message: "Verification process failed.",
+//     });
+//   }
+// });
 
 
 router.post("/verifyotp-in", async (req, res) => {
@@ -85,24 +85,28 @@ router.post("/verifyotp-in", async (req, res) => {
     if (result.isOtpValid) {
       const email = req.body.email; // Extract email from req.body
 
-      // Connect to DB and delete OTP
       const collection = await connectToDB();
       await collection.deleteOne({ email: email });
 
-      res.render("home");
+
+      return res.render("home");
     } else {
-      res.json({
+      return res.json({
         verified: false,
         message: "Invalid OTP.",
       });
     }
   } catch (err) {
-    res.json({
-      verified: false,
-      message: "Verification process failed.",
-    });
+ 
+    if (!res.headersSent) {
+      return res.json({
+        verified: false,
+        message: "Verification process failed.",
+      });
+    }
   }
 });
+
 
 
 router.post("/signup", async (req, res) => {
@@ -130,6 +134,20 @@ router.post("/signup", async (req, res) => {
     res.status(500).send("Error creating user.");
   }
 });
+
+router.get('/verifylink', async (req,res)=>{
+  res.render('verifylink')
+})
+
+router.get('/verifyemail', async (req,res)=>{
+  try{
+    await verifyEmail(req,res)
+  }
+  catch(err){
+    console.log(err)
+    console.log('error from index.js line 148')
+  }
+})
 
 router.get("*", (req, res) => {
   res.send(`
